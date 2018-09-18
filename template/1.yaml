@@ -1,0 +1,68 @@
+tosca_definitions_version: tosca_simple_profile_for_wse_1_0_2
+topology_template:
+  node_templates:
+    nginx:
+      properties:
+        image: nginx
+        job_type: stateless
+        privileged: false
+      type: tosca.nodes.Container.Application.DockerContainer
+      requirements:
+        - attach:
+            node: grframeworkv2
+            relationship:
+              type: tosca.relationships.wise2c.MountDockerVolume
+              properties:
+                container_path: /containerpath
+    grframeworkv2:
+      properties:
+        scope: global
+        host_path: grframeworkv2
+        driver:
+          get_input: NFS
+      type: tosca.nodes.wise2c.DockerVolume
+    nginx2:
+      properties:
+        image: nginx
+        job_type: stateless
+        privileged: false
+      type: tosca.nodes.Container.Application.DockerContainer
+      requirements:
+        - attach:
+            node: grframeworkv2
+            relationship:
+              type: tosca.relationships.wise2c.MountDockerVolume
+              properties:
+                container_path: /nfspath
+  inputs:
+    stack_name:
+      type: string
+      default: ''
+      description: '{"type": "system", "service": "N/A", "data": {}, "system": true}'
+    kubernetes.configmap.resolv.conf:
+      type: string
+      default: ''
+      description: >-
+        {"type": "config", "service": "N/A", "data": {"path":
+        "/etc/resolv.conf"}, "system": true}
+    NFS:
+      type: string
+      description: >-
+        {"type":"label","service":"grframeworkv2","system":false,"data":{"domain":"global-volume"},"comment":""}
+  policies:
+    - nginx_scaling:
+        type: tosca.policies.wise2c.Scaling
+        targets:
+          - nginx
+        properties:
+          default_instances: 1
+          enable: false
+        triggers: {}
+    - nginx2_scaling:
+        type: tosca.policies.wise2c.Scaling
+        targets:
+          - nginx2
+        properties:
+          default_instances: 1
+          enable: false
+        triggers: {}
